@@ -1,0 +1,39 @@
+.program dshot
+.define TPUS 6 ;ticks per microsecond at DShot 150
+.define TT (TPUS * 20 / 3); 40
+.define TL (TPUS * 5 / 2); 15 ticks for long pulse
+.define TS (TT - (2 * TL)); 10 ticks for short pulse
+.define TR (TPUS * 16 / 3); 32 ticks for reverse bit (bidirectional)
+
+
+set X, 0
+.wrap_target
+wait 1 pin 1
+set pins, 1 [(TL-5)]
+pull noblock
+mov X, osr
+out null, 16
+set Y, 14
+out pins, 1 [(TL-1)]
+set pins, 0 [(TS-1)]
+send:
+set pins, 1 [(TL-1)]
+out pins, 1 [(TL-1)]
+set pins, 0 [(TS-2)]
+jmp Y--, send
+.wrap
+
+
+
+
+
+.define public DSHOT2400_CLKDIV_INT 1
+.define public DSHOT2400_CLKDIV_FRAC 96
+.define public DSHOT1200_CLKDIV_INT 2
+.define public DSHOT1200_CLKDIV_FRAC 192
+.define public DSHOT600_CLKDIV_INT 5
+.define public DSHOT600_CLKDIV_FRAC 128
+.define public DSHOT300_CLKDIV_INT 11
+.define public DSHOT300_CLKDIV_FRAC 0
+.define public DSHOT150_CLKDIV_INT 22
+.define public DSHOT150_CLKDIV_FRAC 0

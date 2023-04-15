@@ -1,0 +1,73 @@
+.program bidir_dshot
+.define TPUS 6 ;ticks per microsecond at DShot 150, though bidir dshot only supports dshot 300 and up
+.define TT (TPUS * 20 / 3); 40
+.define TL (TPUS * 5 / 2); 15 ticks for long pulse
+.define TS (TT - (2 * TL)); 10 ticks for short pulse
+.define TR (TPUS * 16 / 3); 32 ticks for reverse bit (bidirectional)
+.define DELAY_SHIFT_COUNT 10 ; set to 8 for DSHOT 300, 9 for 600, 10 for 1200, 11 for 2400 - a value that is up to 3 higher is usually not a problem, but leads to worse dshot packet error handling
+
+set pins, 1
+.wrap_target
+start:
+set pindirs 1
+
+;read TX FIFO while watching for pwm pin "as fast as I can come up with, without taking the jmp pin because the jmp pin is in use for later"
+;if main code does not send data more frequently than the pwm frequency (or it is not a problem if this data is not accepted), the following 7 instructions (until jmp X!=Y) can be shortened to wait 1 gpio x; pull noblock. 
+;with the latter option, you also only need one gpio for pwm instead of one for each sm
+set Y 0b11
+pull noblock
+waitLoop:
+mov isr, null
+in pins, 2
+mov X, osr
+pull noblock
+mov X, isr
+jmp X!=Y waitLoop
+
+;start of transmission
+mov X, osr
+mov osr, ~osr
+out null, 16
+send:
+set pins, 0 [(TL-1)]
+out pins, 1 [(TL-1)]
+set pins, 1 [(TS-2)]
+jmp !OSRE, send
+set pindirs 0
+
+
+mov osr ~ null
+out Y DELAY_SHIFT_COUNT
+check:
+;goal of this loop: wait until the pin goes low (indicating a bidir dshot response) or max ca. 64µs
+jmp Y-- continue ;just decrement counter
+continue:
+jmp !Y start ;if counter is 0, go to start
+jmp pin check ;repeat loop if pin is still low, otherwise continue
+
+
+set Y 20
+mov isr, null [((TR/2)+5)] ;we want to start reading in the middle of the bit to be able to tolerate the highest time error possible
+read:
+in pins, 1 [(TR - 3)]
+jmp Y-- read
+
+push noblock
+
+.wrap
+
+;26 instructions wtf
+;still space for ultra efficient UART I guess :joy:
+
+
+
+
+
+.define public DSHOT2400_CLKDIV_INT 1
+.define public DSHOT2400_CLKDIV_FRAC 96
+.define public DSHOT1200_CLKDIV_INT 2
+.define public DSHOT1200_CLKDIV_FRAC 192
+.define public DSHOT600_CLKDIV_INT 5
+.define public DSHOT600_CLKDIV_FRAC 128
+.define public DSHOT300_CLKDIV_INT 11
+.define public DSHOT300_CLKDIV_FRAC 0

@@ -1,0 +1,23 @@
+.program hello
+pull block
+mov X OSR
+.wrap_target
+set1:
+pull block
+set PINS, 1
+mov X OSR
+mov Y OSR
+jmp !Y set0
+; jmp Y-- set0 [5]
+repeat1:
+jmp Y-- repeat1 [9]
+
+set0:
+set PINS, 0
+mov Y OSR
+; jmp Y-- set1
+; jmp Y-- set1 [5]
+repeat0:
+jmp Y-- repeat0 [9]
+
+.wrap

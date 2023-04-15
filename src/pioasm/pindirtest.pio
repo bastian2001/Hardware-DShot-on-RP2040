@@ -1,0 +1,6 @@
+.program pindirtest
+
+set pins, 0
+set pindirs, 0
+end:
+jmp end
